@@ -1,0 +1,50 @@
+# --------- General Configs ---------
+GENERAL:
+  runner: 'LTSFRunner'
+  batch_size: 32
+  max_epochs: 10
+  early_stop_patience: 3
+
+
+# --------- Data Configs ---------
+DATA:
+  in_steps: 96
+  out_steps: 12
+  x_time_of_day: False
+  x_day_of_week: False
+  y_time_of_day: False
+  y_day_of_week: False
+
+
+# --------- Training Configs ---------
+OPTIM:
+  loss: 'MSE'
+  initial_lr: 0.001
+  lr_scheduler_type: 'ExponentialLR'
+  lr_scheduler_gamma: 0.5 
+  clip_grad: 5.0
+
+
+# --------- Model Configs ---------
+MODEL_PARAM:
+  history_seq_len: 96
+  future_seq_len: 12
+  num_channels: 170
+  d_model: 512
+  use_norm: True
+  emb_dropout: 0.1  
+  decom_type: 'STD'
+  std_kernel: 25
+  rank: 32
+  node_dim: 64
+  e_layers: 2
+  d_state: 32
+  d_conv: 2
+  expand: 1
+  d_ff: 512
+  ffn_dropout: 0.1
+  ffn_activation: 'gelu'
+  ds_type: 'avg'
+  ds_layers: 3
+  ds_window: 2
+  initial_tre_w: 0.9
