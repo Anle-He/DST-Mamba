@@ -73,6 +73,15 @@ if __name__ == '__main__':
         '--compile', 
         action='store_true'
     )
+<<<<<<< HEAD
+=======
+    parser.add_argument(
+        '-tf',
+        '--test_only',
+        type=bool,
+        default=False
+    )
+>>>>>>> 27484ad130b8bdb14335b99fece4e96864018dd5
     args = parser.parse_args()
 
     model_arch = select_model(args.model_name)
@@ -172,6 +181,7 @@ if __name__ == '__main__':
     print_log(f'Model checkpoint saved to: {save}', log=log)
     print_log(log=log)
 
+<<<<<<< HEAD
     model = runner.train(
         model,
         train_loader,
@@ -185,6 +195,22 @@ if __name__ == '__main__':
         verbose=1,
         save=save,
     )
+=======
+    if not args.test_only:
+        model = runner.train(
+            model,
+            train_loader,
+            val_loader,
+            optimizer,
+            scheduler,
+            criterion,
+            max_epochs=cfg['GENERAL'].get('max_epochs', 10),
+            early_stop_patience=cfg['GENERAL'].get('early_stop_patience', 3),
+            compile_model=args.compile,
+            verbose=1,
+            save=save,
+        )
+>>>>>>> 27484ad130b8bdb14335b99fece4e96864018dd5
 
 
     # --------- Test the model --------- #
