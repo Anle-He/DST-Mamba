@@ -8,6 +8,9 @@ import torch
 import torch.nn as nn
 from torchinfo import summary
 
+import warnings
+warnings.filterwarnings('ignore')
+
 from .BaseRunner import BaseRunner
 
 sys.path.append('..')
@@ -16,12 +19,7 @@ from lib.metrics import MSE_MAE
 
 
 class LTSFRunner(BaseRunner):
-    def __init__(
-        self,
-        cfg:dict,
-        device,
-        scaler,
-        log=None):
+    def __init__(self, cfg:dict, device, scaler, log=None):
         super().__init__()
 
         self.cfg = cfg
@@ -29,16 +27,8 @@ class LTSFRunner(BaseRunner):
         self.scaler =scaler
         self.log = log
 
-        self.clip_grad = cfg['OPTIM'].get('clip_grad')
 
-
-    def train_one_epoch(
-        self,
-        model,
-        train_loader,
-        optimizer,
-        scheduler,
-        criterion):
+    def train_one_epoch(self, model, train_loader, optimizer, scheduler, criterion):
 
         model.train()
 
@@ -55,7 +45,7 @@ class LTSFRunner(BaseRunner):
             optimizer.zero_grad()
             loss.backward()
             if self.clip_grad:
-                nn.utils.clip_grad_norm_(model.parameters(), self.clip_grad)
+                nn.utils.clip_grad_norm_(model.parameters(), self.cfg['OPTIM'].get('clip_grad'))
             optimizer.step()
 
         epoch_loss = np.mean(batch_loss_list)
@@ -65,16 +55,13 @@ class LTSFRunner(BaseRunner):
 
 
     @torch.no_grad()
-    def eval_model(
-        self,
-        model,
-        valset_loader,
-        criterion):
+    def eval_model(self, model, val_loader, criterion):
 
         model.eval()
 
         batch_loss_list = []
-        for x_batch, y_batch in valset_loader:
+        for x_batch, y_batch in val_loader:
+
             x_batch = x_batch.float().to(self.device)
             y_batch = y_batch.float().to(self.device)
 
@@ -87,10 +74,7 @@ class LTSFRunner(BaseRunner):
 
 
     @torch.no_grad()
-    def predict(
-        self,
-        model,
-        loader):
+    def predict(self, model, loader):
 
         model.eval()
 
@@ -98,6 +82,7 @@ class LTSFRunner(BaseRunner):
         out = []
 
         for x_batch, y_batch in loader:
+
             x_batch = x_batch.float().to(self.device)
             y_batch = y_batch.float().to(self.device)
 
@@ -123,8 +108,8 @@ class LTSFRunner(BaseRunner):
         optimizer,
         scheduler,
         criterion,
-        max_epochs=100,
-        early_stop_patience=20,
+        max_epochs=10,
+        early_stop_patience=3,
         compile_model=False,
         verbose=1,
         save=None):
@@ -196,14 +181,14 @@ class LTSFRunner(BaseRunner):
 
 
     @torch.no_grad()
-    def test_model(self, model, testset_loader):
+    def test_model(self, model, test_loader):
         
         model.eval()
 
         print_log('--------- Test ---------', log=self.log)
 
         start = time.time()
-        y_true, y_pred = self.predict(model, testset_loader)
+        y_true, y_pred = self.predict(model, test_loader)
         end = time.time()
 
         out_steps = y_pred.shape[1]
@@ -227,5 +212,5 @@ class LTSFRunner(BaseRunner):
             model,
             x_shape,
             verbose=0,  # avoid print twice
-            device=self.device,
+            device=self.device
         )
