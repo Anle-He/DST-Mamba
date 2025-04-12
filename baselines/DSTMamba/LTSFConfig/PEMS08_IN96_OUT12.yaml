@@ -17,10 +17,7 @@ DATA:
 
 
 # --------- Training Configs ---------
-<<<<<<< HEAD
-=======
 # TODO: Support more loss functions
->>>>>>> 27484ad130b8bdb14335b99fece4e96864018dd5
 OPTIM:
   loss: 'MSE'
   initial_lr: 0.001
@@ -30,10 +27,7 @@ OPTIM:
 
 
 # --------- Model Configs ---------
-<<<<<<< HEAD
-=======
 # TODO: Add ablation settings.
->>>>>>> 27484ad130b8bdb14335b99fece4e96864018dd5
 MODEL_PARAM:
   history_seq_len: 96
   future_seq_len: 12
