@@ -8,11 +8,8 @@ import torch
 import torch.nn as nn
 from torchinfo import summary
 
-<<<<<<< HEAD
-=======
 from .BaseRunner import BaseRunner
 
->>>>>>> 27484ad130b8bdb14335b99fece4e96864018dd5
 sys.path.append('..')
 from lib.utils import print_log
 from lib.metrics import MSE_MAE
@@ -78,21 +75,12 @@ class LTSFRunner(BaseRunner):
 
         batch_loss_list = []
         for x_batch, y_batch in valset_loader:
-<<<<<<< HEAD
-            x_batch = x_batch.to(self.device)
-            y_batch = y_batch.to(self.device)
-
-            out_batch = model(x_batch)
-
-            loss = criterion(out_batch, y_batch)
-=======
             x_batch = x_batch.float().to(self.device)
             y_batch = y_batch.float().to(self.device)
 
             out_batch = model(x_batch)
 
             loss = criterion(out_batch.detach().cpu(), y_batch.detach().cpu())
->>>>>>> 27484ad130b8bdb14335b99fece4e96864018dd5
             batch_loss_list.append(loss.item())
 
         return np.mean(batch_loss_list)
@@ -110,18 +98,11 @@ class LTSFRunner(BaseRunner):
         out = []
 
         for x_batch, y_batch in loader:
-<<<<<<< HEAD
-            x_batch = x_batch.to(self.device)
-            y_batch = y_batch.to(self.device)
-
-            out_batch = model(x_batch)
-=======
             x_batch = x_batch.float().to(self.device)
             y_batch = y_batch.float().to(self.device)
 
             out_batch = model(x_batch)
             
->>>>>>> 27484ad130b8bdb14335b99fece4e96864018dd5
             out_batch = out_batch.cpu().numpy()
             y_batch = y_batch.cpu().numpy()
 
@@ -146,10 +127,6 @@ class LTSFRunner(BaseRunner):
         early_stop_patience=20,
         compile_model=False,
         verbose=1,
-<<<<<<< HEAD
-        plot=False,
-=======
->>>>>>> 27484ad130b8bdb14335b99fece4e96864018dd5
         save=None):
 
         if torch.__version__ >= '2.0.0' and compile_model:
