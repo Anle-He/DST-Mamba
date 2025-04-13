@@ -8,7 +8,7 @@ from typing import Optional, NoReturn
 
 def seed_everything(random_seed: Optional[int] = 42) -> NoReturn:
     
-    if seed is None:
+    if random_seed is None:
         return
         
     os.environ['PYTHONHASHSEED'] = str(random_seed)
@@ -18,7 +18,8 @@ def seed_everything(random_seed: Optional[int] = 42) -> NoReturn:
     torch.manual_seed(random_seed)
 
     torch.cuda.manual_seed(random_seed)
-    torch.cuda.manual_seed_all(random_seed) # If you are using multi-GPU.
+    # For multi-GPU environment
+    torch.cuda.manual_seed_all(random_seed)
 
     # torch.backends.cudnn.deterministic = True
     # torch.backends.cudnn.benchmark = False

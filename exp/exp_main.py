@@ -1,6 +1,7 @@
 import os
 import sys
 import yaml
+import json
 import argparse
 
 import torch
@@ -19,6 +20,7 @@ from data.get_dataloader import select_dataloader
 
 
 if __name__ == '__main__':
+
     # --------- Set running env --------- #
     # TODO: Support adjust the randowm seed in scripts.
     fix_seed = 2024
@@ -26,18 +28,19 @@ if __name__ == '__main__':
 
     # Limit the number of cpu threads
     # TODO: Adjust cpu_num for long-range sequence.
-    cpu_num = 3
-    torch.set_num_threads(cpu_num) 
-    os.environ['OMP_NUM_THREADS'] = str(cpu_num)
-    os.environ['OPENBLAS_NUM_THREADS'] = str(cpu_num)
-    os.environ['MKL_NUM_THREADS'] = str(cpu_num)
-    os.environ['VECLIB_MAXIMUM_THREADS'] = str(cpu_num)
-    os.environ['NUMEXPR_NUM_THREADS'] = str(cpu_num)    
+    #cpu_num = 3
+    #torch.set_num_threads(cpu_num) 
+    #os.environ['OMP_NUM_THREADS'] = str(cpu_num)
+    #os.environ['OPENBLAS_NUM_THREADS'] = str(cpu_num)
+    #os.environ['MKL_NUM_THREADS'] = str(cpu_num)
+    #os.environ['VECLIB_MAXIMUM_THREADS'] = str(cpu_num)
+    #os.environ['NUMEXPR_NUM_THREADS'] = str(cpu_num)    
 
     # Set device
     DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
+    # Set exp args
     parser = argparse.ArgumentParser()
     # Specify the model
     parser.add_argument(
@@ -51,7 +54,7 @@ if __name__ == '__main__':
         '-t',
         '--task_name',
         type=str,
-        default='LTSF' # Only support LTSF/STF now 
+        default='LTSF'
     )
     # Specify the dataset
     parser.add_argument(
@@ -81,6 +84,7 @@ if __name__ == '__main__':
     )
     # TODO: add arg: save_resutls
     args = parser.parse_args()
+
 
     model_arch = select_model(args.model_name)
     data_path = f'../data/{args.dataset_name.upper()}'
