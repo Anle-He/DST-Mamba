@@ -6,67 +6,15 @@ import torch.nn as nn
 
 def select_loss(loss_name):
 
-    if loss_name.upper() == 'MAE':
-        return MaskedMAELoss
-    elif loss_name.upper() == 'MSE':
+    if loss_name == 'MAE':
+        return nn.L1Loss
+    elif loss_name == 'MSE':
         return nn.MSELoss
+    elif loss_name == 'HUBER':
+        return nn.HuberLoss
     # TODO: support order-robust training.
     else:
         raise ValueError(f'Invalid loss: {loss_name}')
-
-
-def MaskedMAELoss():
-
-    def _get_name(self):
-        return self.__class__.__name__
-
-
-    def __call__(self, preds, labels, null_val=np.nan):
-        return masked_mae(preds, labels, null_val)
-
-
-def masked_mae(preds, labels, null_val):
-
-    if np.isnan(null_val):
-        mask = ~torch.isnan(labels)
-    else:
-        mask = (labels != null_val)
-    
-    mask = mask.float()
-    mask /=  torch.mean((mask))
-    mask = torch.where(torch.isnan(mask), torch.zeros_like(mask), mask)
-    
-    loss = torch.abs(preds-labels)
-    loss = loss * mask
-    loss = torch.where(torch.isnan(loss), torch.zeros_like(loss), loss)
-    
-    return torch.mean(loss)
-
-
-def MaskedMSELoss():
-    def _get_name(self):
-        return self.__class__.__name__
-
-    def __call__(self, preds, labels, null_val=np.nan):
-        return masked_mse(preds, labels, null_val)
-
-
-def masked_mse(preds, labels, null_val=np.nan):
-
-    if np.isnan(null_val):
-        mask = ~torch.isnan(labels)
-    else:
-        mask = (labels!=null_val)
-
-    mask = mask.float()
-    mask /= torch.mean((mask))
-    mask = torch.where(torch.isnan(mask), torch.zeros_like(mask), mask)
-    
-    loss = (preds-labels)**2
-    loss = loss * mask
-    loss = torch.where(torch.isnan(loss), torch.zeros_like(loss), loss)
-    
-    return torch.mean(loss)
 
 
 def MSE_MAE(y_true, y_pred):
