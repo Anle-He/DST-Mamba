@@ -1,6 +1,7 @@
 import os
-import torch
 import numpy as np
+
+import torch
 from torch.utils.data import DataLoader
 
 from lib.scalers import StandardScaler
@@ -9,27 +10,26 @@ from lib.utils import print_log
 
 def select_dataloader(task):
 
-    if task == 'STF':
+    if task == 'LTSF':
+        return build_LTSF_dataloader
+    elif task == 'STF':
         # TODO: implement STF dataloader
         return  ValueError('STF dataloader has not been implemented yet')
-    elif task == 'LTSF':
-        return build_LTSF_dataloader
     else:
-        raise ValueError('No such dataloader')  
+        raise ValueError(f'{task} dataloader has not been implemented yet')
 
 
 # Inverse transformation is not applied in LTSF
 def build_LTSF_dataloader(
-    data_dir,
-    batch_size,
-    in_steps=96,
-    out_steps=12,
-    tod=False,
-    dow=False,
-    y_tod=False,
-    y_dow=False,
-    log=None
-    ):
+        data_dir,
+        batch_size,
+        in_steps=96,
+        out_steps=12,
+        x_tod=False,
+        x_dow=False,
+        y_tod=False,
+        y_dow=False,
+        log=None):
 
     data = np.load(os.path.join(data_dir, f'data.npz'))['data'].astype(np.float32)
     index = np.load(os.path.join(data_dir, f'index_{in_steps}_{out_steps}.npz'))
@@ -37,9 +37,9 @@ def build_LTSF_dataloader(
 
     # Add timestamp features
     x_features = [0]
-    if tod:
+    if x_tod:
         x_features.append(1)
-    if dow:
+    if x_dow:
         x_features.append(2)
 
     y_features = [0]
@@ -55,7 +55,8 @@ def build_LTSF_dataloader(
 
     len_train = train_index[-1][1]
     scaler = StandardScaler(
-        mean=data[:len_train, :, 0].mean(axis=0), std=data[:len_train, :, 0].std(axis=0)
+        mean=data[:len_train, :, 0].mean(axis=0), 
+        std=data[:len_train, :, 0].std(axis=0)
     )
     data[..., 0] = scaler.transform(data[..., 0])
 
@@ -75,23 +76,26 @@ def build_LTSF_dataloader(
 
 
     trainset = torch.utils.data.TensorDataset(
-        torch.FloatTensor(x_train), torch.FloatTensor(y_train)
+        torch.FloatTensor(x_train), 
+        torch.FloatTensor(y_train)
     )
     valset = torch.utils.data.TensorDataset(
-        torch.FloatTensor(x_val), torch.FloatTensor(y_val)
+        torch.FloatTensor(x_val), 
+        torch.FloatTensor(y_val)
     )
     testset = torch.utils.data.TensorDataset(
-        torch.FloatTensor(x_test), torch.FloatTensor(y_test)
+        torch.FloatTensor(x_test), 
+        torch.FloatTensor(y_test)
     )
 
-    trainset_loader = DataLoader(
+    train_loader = DataLoader(
         trainset, batch_size=batch_size, shuffle=True
     )
-    valset_loader = DataLoader(
+    val_loader = DataLoader(
         valset, batch_size=batch_size, shuffle=False
     )
-    testset_loader = DataLoader(
+    test_loader = DataLoader(
         testset, batch_size=batch_size, shuffle=False
     )
 
-    return trainset_loader, valset_loader, testset_loader, scaler
+    return train_loader, val_loader, test_loader, scaler

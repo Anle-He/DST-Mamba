@@ -2,6 +2,7 @@ import os
 import sys
 import yaml
 import json
+import datetime
 import argparse
 
 import torch
@@ -23,18 +24,17 @@ if __name__ == '__main__':
 
     # --------- Set running env --------- #
     # TODO: Support adjust the randowm seed in scripts.
-    fix_seed = 2024
+    fix_seed = 2025
     seed_everything(fix_seed)
 
     # Limit the number of cpu threads
-    # TODO: Adjust cpu_num for long-range sequence.
-    #cpu_num = 3
-    #torch.set_num_threads(cpu_num) 
+    #cpu_num = 3 # Limit the number of cpu threads used
     #os.environ['OMP_NUM_THREADS'] = str(cpu_num)
     #os.environ['OPENBLAS_NUM_THREADS'] = str(cpu_num)
     #os.environ['MKL_NUM_THREADS'] = str(cpu_num)
     #os.environ['VECLIB_MAXIMUM_THREADS'] = str(cpu_num)
-    #os.environ['NUMEXPR_NUM_THREADS'] = str(cpu_num)    
+    #os.environ['NUMEXPR_NUM_THREADS'] = str(cpu_num)
+    #torch.set_num_threads(cpu_num)   
 
     # Set device
     DEVICE = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -87,7 +87,7 @@ if __name__ == '__main__':
 
 
     model_arch = select_model(args.model_name)
-    data_path = f'../data/{args.dataset_name.upper()}'
+    data_path = f'../data/datasets_zoo/{args.dataset_name.upper()}'
     cfg_path = args.config_path
     with open(cfg_path, 'r') as f:
         cfg = yaml.safe_load(f)
@@ -143,7 +143,9 @@ if __name__ == '__main__':
     # TODO: Enable changing optimizer
     optimizer = torch.optim.Adam(
         model.parameters(),
-        lr=cfg['OPTIM'].get('initial_lr', 0.001)
+        lr=cfg['OPTIM'].get('initial_lr', 0.001),
+        weight_decay=cfg['OPTIM'].get('weight_decay', 0),
+        eps=cfg['OPTIM'].get('eps', 1e-8)
     )
 
     lr_scheduler_type = cfg['OPTIM'].get('lr_scheduler_type', 'ExponentialLR')
@@ -157,9 +159,16 @@ if __name__ == '__main__':
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
             optimizer,
             steps_per_epoch=len(train_loader),
-            max_lr=cfg['OPTIM'].get('initial_lr'),
+            max_lr= cfg['OPTIM'].get('initial_lr'),
             epochs=cfg['GENERAL'].get('max_epochs'),
             pct_start=cfg['OPTIM'].get('lr_scheduler_pct_start')
+        )
+    elif lr_scheduler_type == 'MultiStepLR':
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        optimizer,
+        milestones=cfg.get('milestones', []),
+        gamma=cfg.get('lr_decay_rate', 0.1),
+        verbose=False
         )
     else: 
         raise ValueError('No such lr scheduler') 
