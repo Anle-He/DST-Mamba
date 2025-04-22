@@ -4,6 +4,7 @@ This file is adapted from the following repositories:
     - https://github.com/XDZhelheim/Torch-MTS/scripts/generate_training_data.py
 """
 import os
+import sys
 import numpy as np
 import pandas as pd
 
@@ -29,7 +30,9 @@ regular_settings = {
 }
 
 
-def load_and_preprocess_data():
+def load_and_preprocess_data(save_data:bool):
+
+    save_data = save_data
 
     split = regular_settings['SPLIT']
     in_steps = regular_settings['IN_STEPS']
@@ -155,13 +158,27 @@ def load_and_preprocess_data():
     print('Data shape: {0}'.format(processed_data.shape))
 
     np.savez_compressed(os.path.join(output_dir, f'index_in{in_steps}_out{out_steps}.npz'), train=train_index, val=val_index, test=test_index)
-    np.savez_compressed(os.path.join(output_dir, f'processed_data.npz'), data=processed_data)
+    if save_data:
+        np.savez_compressed(os.path.join(output_dir, f'processed_data.npz'), data=processed_data)
 
 
 def main():
     
     # TODO: add save_desc() & save_graph()
-    # TODO: add arg: save_data to avoid repeating generating processed_data.npz
+    save_data = True
+    data_path = os.path.join(output_dir, 'processed_data.npz')
+    index_path = os.path.join(output_dir, f'index_in{regular_settings['IN_STEPS']}_out{regular_settings['OUT_STEPS']}.npz')
+
+    if os.path.exists(data_path) and os.path.exists(index_path):
+        reply = str(input(
+            f"{os.path.join(output_dir, f'processed_data.npz and index_in{regular_settings['IN_STEPS']}_out{regular_settings['OUT_STEPS']}.npz')} exist. Do you want to overwrite them? (y/n) "
+            )).lower().strip()
+        if reply[0] != 'y':
+            sys.exit(0)
+    elif os.path.exists(data_path) and not os.path.exists(index_path):
+        print("Generating new indices...")
+        save_data = False
+    
     print('Loading and preprocessing data...')
     load_and_preprocess_data()
 
