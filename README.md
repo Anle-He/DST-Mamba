@@ -1,1 +1,1 @@
-bash exp/exp_ltsf_pems08.sh
+bash exp/dstmamba_ltsf_pems08.sh
