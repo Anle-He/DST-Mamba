@@ -1,1 +1,1 @@
-bash exp/dstmamba_ltsf_pems08.sh
+bash scripts/LTSF/METRLA/DSTMamba.sh
