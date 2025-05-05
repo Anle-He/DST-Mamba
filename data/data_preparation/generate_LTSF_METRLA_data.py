@@ -1,8 +1,3 @@
-"""
-This file is adapted from the following repositories:
-    - https://github.com/zezhishao/BasicTS/scripts/data_preparation
-    - https://github.com/XDZhelheim/Torch-MTS/scripts/generate_training_data.py
-"""
 import os
 import sys
 import numpy as np
@@ -180,7 +175,7 @@ def main():
         save_data = False
     
     print('Loading and preprocessing data...')
-    load_and_preprocess_data()
+    load_and_preprocess_data(save_data)
 
 
 if __name__ == '__main__':

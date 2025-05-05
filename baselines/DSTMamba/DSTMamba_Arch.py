@@ -2,13 +2,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from einops import repeat
 from mamba_ssm import Mamba
 
 from .RevIN import RevIN
 from .SeriesDec import Temporal_Decomposition
 from .SeriesMix import MultiScaleTrendMixing
-from .Embed import DataEmbedding
+from .Embed import SeriesEmbedding
 from .MambaEnc import Encoder, EncoderLayer
 
 
@@ -21,14 +20,15 @@ class DSTMamba(nn.Module):
         self.num_channels = model_args['num_channels']
         self.d_model = model_args['d_model']
 
-        self.use_norm = model_args['use_norm']
+        self.use_revin = model_args['use_revin']
         #self.norm_type = model_args['norm_type']
         self.emb_dropout = model_args['emb_dropout']
+        self.add_se = model_args['add_se'] 
+        self.rank = model_args['rank']
+        self.node_dim = model_args['node_dim']     
+
         self.decom_type = model_args['decom_type']
         self.std_kernel = model_args['std_kernel']
-
-        self.rank = model_args['rank']
-        self.node_dim = model_args['node_dim']
 
         # TODO: Change the sequential mode of Mamba
         # self.mamba_mode = model_args['mamba_mode']
@@ -55,17 +55,12 @@ class DSTMamba(nn.Module):
     
     def build(self):
 
-        self.revin_layer = RevIN(num_features=self.num_channels)
+        self.revin = RevIN(num_features=self.num_channels, eps=1e-5, affine=True, subtract_last=False) if self.use_revin else None
 
         if self.decom_type == 'STD':
             self.decom = Temporal_Decomposition(self.std_kernel)
 
-        embed_dim = self.d_model - self.node_dim
-        self.embedding = DataEmbedding(self.history_seq_len, embed_dim, self.emb_dropout)
-
-        self.adapter = nn.Parameter(torch.empty(self.num_channels, embed_dim, self.rank)) # [N, E, r]
-        nn.init.xavier_uniform_(self.adapter)
-        self.lora = nn.Linear(self.rank, self.node_dim, bias=False)        
+        self.embedding = SeriesEmbedding(self.history_seq_len, self.num_channels, self.d_model, self.emb_dropout, self.add_se, self.rank, self.node_dim)      
 
         self.encoder = Encoder(
             [
@@ -110,29 +105,17 @@ class DSTMamba(nn.Module):
     def forward(self,
                 history_data: torch.Tensor) -> torch.Tensor:
         
-        x_in = history_data[..., 0] # [Batch_size, Seq_len, Num_channels]
-        B, _, _ = x_in.shape
+        # x_in: [batch_size, seq_len, num_channels]
+        x_in = history_data[..., 0]
         
-        if self.use_norm:
+        if self.use_revin:
             x_in = self.revin_layer(x_in, mode='norm')
 
         x_sea, _ = self.decom(x_in)
 
-        # Embedding: [B, T, N] -> [B, N, E]
-        x_emb = self.embedding(x_sea)
-
-        # Add spatial embeddings
-        adaptation = []
-        adapter = F.relu(self.lora(self.adapter)) # [N, E-D, r] -> [N, E-D, D]
-        adapter = adapter.permute(1, 2, 0)  # [E-D, D, N]
-        adapter = repeat(adapter, 'D d n -> repeat D d n', repeat=B) # [B, E-D, D, N]
-        x_emb = x_emb.transpose(1, 2) # (B, N, E-D) -> (B, E-D, N)
-        adaptation.append(torch.einsum('bDn,bDdn->bdn', [x_emb, adapter]))  # [B, D, N]
-        x_emb = torch.cat([x_emb] + adaptation, dim=1)  # [B, E, N]
-        x_emb = x_emb.transpose(1, 2)  # [B, E, N] -> # [B, N, E]
+        x_emb = self.embedding(x_sea) # (B, L, N) -> (B, N, d_model)
 
         # TODO: Add Graph or reduce sequential bias
-
         # Encoder: [B, N, E] -> [B, N, E]
         enc_out = self.encoder(x_emb)
 

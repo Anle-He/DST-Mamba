@@ -4,9 +4,9 @@ import torch.nn as nn
 
 class RevIN(nn.Module):
     def __init__(self, 
-                 num_features: int,
-                 eps=1e-5,
-                 affine=True,
+                 num_features: int, # Dimensions of the feature/channel
+                 eps=1e-5, # A value added for numerical stability
+                 affine=True, # Whether to use learnable affine parameters
                  subtract_last=False):
         super(RevIN, self).__init__()
 
@@ -35,12 +35,13 @@ class RevIN(nn.Module):
         return x
     
 
-    def _get_statistics(self, x):
+    def _get_statistics(self, 
+                        x):
 
         dim2reduce = tuple(range(1, x.ndim-1))
 
         if self.subtract_last:
-            self.last = x[:,-1,:].unsqueeze(1)
+            self.last = x[:, -1, :].unsqueeze(1)
         else:
             self.mean = torch.mean(x, dim=dim2reduce, keepdim=True).detach()
 
